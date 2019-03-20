@@ -17,8 +17,14 @@ class MyTCPHandler(socketserver.StreamRequestHandler):
     host, port = None, None
     while self.rfile:
       line = self.rfile.readline()
+      if not line:  # EOF
+        break
+
       PRINT(line)
       lines.append(line)
+
+      if line == b'\r\n':
+        break
 
       text = line.decode('utf-8').strip()
       if text.startswith('Host: '):
@@ -50,6 +56,9 @@ class MyTCPHandler(socketserver.StreamRequestHandler):
 
     while self.rfile:
       line = self.rfile.readline()
+      if not line:  # EOF
+        break
+
       PRINT(line)
       sock.send(line)
       if line == b'\r\n':
@@ -58,7 +67,7 @@ class MyTCPHandler(socketserver.StreamRequestHandler):
     while True:
       chunk = sock.recv(1024)
       PRINT(chunk)
-      if chunk == b'':
+      if not chunk:
         break
       self.wfile.write(chunk)
 
