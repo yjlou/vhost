@@ -2,6 +2,7 @@
 
 import socket
 import socketserver
+import threading
 
 import conf
 
@@ -37,7 +38,11 @@ class MyTCPHandler(socketserver.StreamRequestHandler):
           port = 80
         break
 
-    forward = conf.MAPPING.get(host.lower())
+    if host is not None:
+      forward = conf.MAPPING.get(host.lower())
+    else:
+      forward = None
+
     if forward:
       host, port = forward
     else:
@@ -72,11 +77,21 @@ class MyTCPHandler(socketserver.StreamRequestHandler):
       self.wfile.write(chunk)
 
 
+class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    pass
+
+
 if __name__ == "__main__":
+  socketserver.TCPServer.allow_reuse_address = True
 
   # Create the server, binding to localhost on port 9999
-  socketserver.TCPServer.allow_reuse_address = True
-  server = socketserver.TCPServer((conf.VHOST_HOST, conf.VHOST_PORT), MyTCPHandler)
+  if True:
+    # Multithread
+    server = ThreadedTCPServer((conf.VHOST_HOST, conf.VHOST_PORT), MyTCPHandler)
+  else:
+    # Single thread
+    server = socketserver.TCPServer((conf.VHOST_HOST, conf.VHOST_PORT), MyTCPHandler)
+
   print('Listening on {}:{} ...'.format(conf.VHOST_HOST, conf.VHOST_PORT))
 
   # Activate the server; this will keep running until you
