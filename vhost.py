@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import resource
 import socket
 import socketserver
 import threading
@@ -82,6 +83,9 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 
 if __name__ == "__main__":
+  # To prevent this error: OSError: [Errno 24] Too many open files
+  resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
+
   socketserver.TCPServer.allow_reuse_address = True
 
   # Create the server, binding to localhost on port 9999
