@@ -17,6 +17,9 @@ class MyTCPHandler(socketserver.StreamRequestHandler):
   def handle(self):
     lines = []
     host, port = None, None
+    first_line = True
+    found_get_my_client_ip = False
+
     while self.rfile:
       line = self.rfile.readline()
       if not line:  # EOF
@@ -25,10 +28,18 @@ class MyTCPHandler(socketserver.StreamRequestHandler):
       PRINT(line)
       lines.append(line)
 
+      # end of headers
       if line == b'\r\n':
         break
 
       text = line.decode('utf-8').strip()
+
+      # Parse for special command
+      if first_line:
+        first_line = False
+        if 'GET /get_my_client_ip' in text:
+          found_get_my_client_ip = True
+
       if text.startswith('Host: '):
         # Host: sad5566.com:5665
         host_port = text.split(' ')[1].split(':')
@@ -49,7 +60,14 @@ class MyTCPHandler(socketserver.StreamRequestHandler):
     else:
       host, port = conf.DEFAULT_HOST, conf.DEFAULT_PORT
 
-    PRINT('Forward to {}:{}'.format(host, port))
+    client_addr = self.client_address[0]
+
+    if found_get_my_client_ip:
+      output = 'HTTP/1.0 200 OK\r\n\r\n{}'.format(client_addr)
+      self.wfile.write(output.encode('utf-8'))
+      return
+
+    PRINT('Forward {} to {}:{}'.format(client_addr, host, port))
 
     # Connect to the real server.
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
