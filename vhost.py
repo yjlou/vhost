@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 
+import gc
 import resource
 import socket
 import socketserver
 import threading
+import time
 
 import conf
 
@@ -100,6 +102,13 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
 
+def run_gc():
+  while True:
+    print("Garbage collecting: START ...")
+    gc.collect()
+    print("Garbage collecting: DONE.")
+    time.sleep(60)
+
 if __name__ == "__main__":
   # To prevent this error: OSError: [Errno 24] Too many open files
   resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
@@ -115,6 +124,8 @@ if __name__ == "__main__":
     server = socketserver.TCPServer((conf.VHOST_HOST, conf.VHOST_PORT), MyTCPHandler)
 
   print('Listening on {}:{} ...'.format(conf.VHOST_HOST, conf.VHOST_PORT))
+
+  threading.Thread(target = run_gc).start()
 
   # Activate the server; this will keep running until you
   # interrupt the program with Ctrl-C
